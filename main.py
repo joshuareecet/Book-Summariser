@@ -1,29 +1,48 @@
 #Imports required for gemini access
 from google import genai
 from google.genai import types
-#For tcl/tk access
-from tkinter import *
-from tkinter import tkk
 
 #Imports from project
-from initial_setup import get_api_key
+import initial_setup
+from ebook_reader import *
+
+#SETUP
+api_key = initial_setup.get_api_key()
+query_fiction = initial_setup.query_fiction
+query_non_fiction = initial_setup.query_non_fiction
 
 
+#Function definitions
+def get_book_summary(chapter_as_str: str, summary_query = None):
+    pass
 
-api_key = get_api_key()
-def get_ebook():
-  pass
-  
+def get_chapter_summary(chapter_as_str: str, summary_query = query_fiction):
+    """Queries Gemini API to get a summary of the chapter
+    Arguments:
+        summary_query (str): the query *for now summary of fiction or non fiction = default
+        chapter_as_str (str): The chapter to get a summary of
+    Returns:
+        summary (str): The summary of the chapter
+    """
+    response = queryGemini(query=(summary_query+chapter_as_str))
 
-# The client gets the API key from the environment variable `GEMINI_API_KEY`.
-client = genai.Client(api_key = api_key)
-"""
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents="Please explain how I'm using the gemini api",
-    config = types.GenerateContentConfig(
-      thinking_config=types.ThinkingConfig(thinking_budget=0) #Disables thinking
-    )
-)
-print(response.text)
-"""
+def queryGemini(query: str):
+  """Sends query to gemini and returns the response text
+  """
+  # The client gets the API key from the environment variable `GEMINI_API_KEY`.
+  client = genai.Client()
+  response = client.models.generate_content(
+      model="gemini-2.5-flash",
+      contents=query,
+      config = types.GenerateContentConfig(
+        thinking_config=types.ThinkingConfig(thinking_budget=0) #Disables thinking
+      )
+  )
+  print(response.text)
+  return response.text
+
+#RUN
+file_path = get_file_path()
+str_book = html_to_str(epub_to_html(file_path))
+num_chapters = len(str_book)
+get_chapter_summary(str_book[3])

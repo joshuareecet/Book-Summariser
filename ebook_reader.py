@@ -1,8 +1,10 @@
-import ebooklib
-from bs4 import BeautifulSoup
-import tkinter
-import tkinter.filedialog
+import ebooklib , ebooklib.epub
 from ebooklib import epub
+
+from bs4 import BeautifulSoup
+import tkinter , tkinter.filedialog
+
+import json
 
 """
 TODO (HIGH to LOW priority): 
@@ -11,20 +13,25 @@ TODO (HIGH to LOW priority):
     2. User does not have an epub, cannot escape the while loop
 
 2. Add book class: gives easy access to key features of the book even after processing:
-    1. author
-    2. title
-    3. language
-    4. num. chapters
-    5. chapter titles (maybe?)
-    4. **path?
-    5. Store gemini calls for chapter summaries
+    2.1 Add more parsing for ebook!
+        2.1.1 Chapter titles should be associated with each chapter
+    2.2 Add class attributes:
+        2.2.1 author
+        2.2.2 title
+        2.2.3 language
+        2.2.4. num. chapters
+        2.2.5. chapter titles (maybe?)
+        2.2.4. **path?
+    2.3 Store gemini calls for chapter summaries
+    2.4 Integrate an SQL database for storage
 
 3. Combine epub_to_html and html_to_str into one function
-    1. Add both str and html to the book class
-    2. Then can call straight from object of book class for searching in gemini
-    3.
+    3.1 Add both str and html to the book class
+    3.2 Then can call straight from object of book class for searching in gemini
     
-4. Integrate with a book tracker? maybe calibre
+4. Integrate with a book tracker
+    4.1 Calibre - primary target
+    4.2
 
 5. Create GUI interface 
     
@@ -34,10 +41,10 @@ TODO (HIGH to LOW priority):
 class Book():
     def __init__(self, file_path):
         self._path = file_path
-        self.__epub = epub.read_epub(file_path) #Do we need this? 
-        self._author = self._epub.get_metadata('DC','author')
-        self._title = self._epub.get_metadata('DC','title')
-        self._language = self._epub.get_metadata('DC','language')
+        self.__epub = epub.read_epub(file_path) #Not sure if we necessarily need this.
+        self._author = self.__epub.get_metadata('DC','author')
+        self._title = self.__epub.get_metadata('DC','title')
+        self._language = self.__epub.get_metadata('DC','language')
 
     def author(self):
         return self._author
@@ -50,6 +57,10 @@ class Book():
     
     def summary(self):
         pass #Should integrate epub_to_html into class first
+
+def store_book():
+    with open("bookshelf", 'w') as bookshelf:
+        bookshelf.write()
 
 def epub_to_html(file_path: str):
     """Function to convert an ebook to a list containing chapter content in html format

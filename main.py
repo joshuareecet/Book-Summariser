@@ -4,13 +4,14 @@ from google.genai import types
 
 #Imports from project
 import initial_setup
-from ebook_reader import *
+from ebook_interaction import get_file_path, html_to_str, epub_to_html
 
-#SETUP
+
+#Loading constants + module variables
 api_key = initial_setup.get_api_key()
 query_fiction = initial_setup.query_fiction
 query_non_fiction = initial_setup.query_non_fiction
-
+bookshelf = initial_setup.bookshelf
 
 #Function definitions
 def get_book_summary(chapter_as_str: str, summary_query = None):

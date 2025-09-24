@@ -4,7 +4,8 @@ from ebooklib import epub
 from bs4 import BeautifulSoup
 import tkinter , tkinter.filedialog
 
-import json
+#Using for storing class object as a dict
+import jsons
 
 """
 TODO (HIGH to LOW priority): 
@@ -25,7 +26,7 @@ TODO (HIGH to LOW priority):
     2.3 Store gemini calls for chapter summaries
     2.4 Integrate an SQL database for storage
 
-3. Combine epub_to_html and html_to_str into one function
+3. Combine epub_to_html and html_to_str into one function / Make them class functions
     3.1 Add both str and html to the book class
     3.2 Then can call straight from object of book class for searching in gemini
     
@@ -39,28 +40,37 @@ TODO (HIGH to LOW priority):
 
 
 class Book():
-    def __init__(self, file_path):
-        self._path = file_path
-        self.__epub = epub.read_epub(file_path) #Not sure if we necessarily need this.
-        self._author = self.__epub.get_metadata('DC','author')
-        self._title = self.__epub.get_metadata('DC','title')
-        self._language = self.__epub.get_metadata('DC','language')
+    def __init__(self, file_path: str):
+        self._path: str = file_path
+        
+        #Getting the metadata using ebooklib
+        epub_book: ebooklib.epub.EpubBook = epub.read_epub(file_path)
+        author_metadata: str = epub_book.get_metadata('DC','author')
+        title_metadata: str = epub_book.get_metadata('DC','title')
+        language_metadata: str = epub_book.get_metadata('DC','language') #this can return the format e.g. XML maybe we can use this
+        
+        #Converting metadata into information for storage
+        self._title = title_metadata[0][0] if title_metadata else "Unknown title"
+        self._author: list = [str(a) for a in author_metadata] if author_metadata else "Unknown Author"
+        self._language = language_metadata[0][0] if language_metadata else "Unknown Language"
+        
 
     def author(self):
         return self._author
     def path(self):
         return self._path #may remove this or add some sort of redundancy if the host changes the file path
     def title(self):
-        return self.title
+        return self._title
     def language(self):
         return self._language
     
     def summary(self):
         pass #Should integrate epub_to_html into class first
 
-def store_book():
+def store_book(book: Book):
     with open("bookshelf", 'w') as bookshelf:
-        bookshelf.write()
+        bookshelf.write(jsons.dumps(book, indent=4, sort_keys=True))
+
 
 def epub_to_html(file_path: str):
     """Function to convert an ebook to a list containing chapter content in html format
@@ -99,7 +109,10 @@ def get_file_path():
     return book_path
 
 if __name__ == "__main__":
+    # file_path = get_file_path()
+    # html_book = epub_to_html(file_path)
+    # str_book = html_to_str(html_book)
+    # print(str_book[18])
     file_path = get_file_path()
-    html_book = epub_to_html(file_path)
-    str_book = html_to_str(html_book)
-    print(str_book[18])
+    fakeBook = Book(file_path)
+    store_book(fakeBook)

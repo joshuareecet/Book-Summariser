@@ -1,3 +1,6 @@
+import ebooklib , ebooklib.epub
+from ebooklib import epub
+
 class Book():
     def __init__(self, file_path: str):
         self._path: str = file_path
@@ -22,6 +25,6 @@ class Book():
         return self._title
     def language(self):
         return self._language
-    
+
     def summary(self):
         pass #Should integrate epub_to_html into class first

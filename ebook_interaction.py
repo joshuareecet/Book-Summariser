@@ -7,49 +7,25 @@ import tkinter , tkinter.filedialog
 from initial_setup import get_bookshelf
 #Using for storing class object as a dict
 import jsons
-
-"""
-TODO (HIGH to LOW priority): 
-1. Add exceptions for edge cases e.g:
-    1. Book may not have any chapters at all? what do we do
-    2. User does not have an epub, cannot escape the while loop
-
-2. Add book class: gives easy access to key features of the book even after processing:
-    2.1 Add more parsing for ebook!
-        2.1.1 Chapter titles should be associated with each chapter
-    2.2 Add class attributes:
-        2.2.1 author
-        2.2.2 title
-        2.2.3 language
-        2.2.4. num. chapters
-        2.2.5. chapter titles (maybe?)
-        2.2.4. **path?
-    2.3 Store gemini calls for chapter summaries
-    2.4 Integrate an SQL database for storage
-
-3. Combine epub_to_html and html_to_str into one function / Make them class functions
-    3.1 Add both str and html to the book class
-    3.2 Then can call straight from object of book class for searching in gemini
-    
-4. Integrate with a book tracker
-    4.1 Calibre - primary target
-    4.2
-
-5. Create GUI interface 
-    
-"""
-
+import json
 
 #Constants
-bookshelf = get_bookshelf()
+
 
 #Function definitions
-def store_book(book: Book):
-    bookshelf.append(book) #Maybe we can sort the bookshelf for faster search?
-    #NEED LOGIC FOR IF THE BOOK ALREADY EXISTS
-    with open("bookshelf.json", 'w') as bookshelf_file:
-        bookshelf_file.write(jsons.dumps(bookshelf, indent=4, sort_keys=True))
-
+def store_book(new_book: Book):
+    bookshelf = get_bookshelf()
+    for book in bookshelf:
+        if new_book._title in book['_title']: #this should change. we need a unique identifier in the book class for each book.
+            print("Book already in library")
+            return
+    else:
+        bookshelf.append(new_book)
+        #Should we sort the bookshelf as we build it?
+        with open("bookshelf.json", 'w') as bookshelf_file:
+            bookshelf_file.write(jsons.dumps(bookshelf))
+        print("Book added to library")
+        return
 
 def epub_to_html(file_path: str):
     """Function to convert an ebook to a list containing chapter content in html format
@@ -66,7 +42,7 @@ def epub_to_html(file_path: str):
             chapters.append(item.get_content())
     return chapters
 
-def html_to_str(chapters):
+def html_to_str(chapters, chapter_title):
     """Converts the html ebook format to pure text
     Arguments:
         chapters (list):
@@ -77,6 +53,8 @@ def html_to_str(chapters):
     book = []
     for chapter in chapters:
         soup = BeautifulSoup(chapter, 'html.parser')
+        title_tag = soup.head
+        chapter_title.append(title_tag['title'])
         text = [soup.get_text()]
         book.append(' '.join(text))
     return book

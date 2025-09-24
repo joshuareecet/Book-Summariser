@@ -4,15 +4,13 @@ from google.genai import types
 
 #Imports from project
 import initial_setup
-from initial_setup import get_bookshelf
-from ebook_interaction import get_file_path, html_to_str, epub_to_html
-
+from core_classes import Book
+from user_interaction import get_file_path
 
 #Loading constants + module variables
-api_key = initial_setup.get_api_key()
 query_fiction = initial_setup.query_fiction
 query_non_fiction = initial_setup.query_non_fiction
-bookshelf = get_bookshelf()
+shelf = initial_setup.shelf
 
 #Function definitions
 def get_book_summary(chapter_as_str: str, summary_query = None):
@@ -45,6 +43,6 @@ def queryGemini(query: str):
 
 #RUN
 file_path = get_file_path()
-str_book = html_to_str(epub_to_html(file_path))
-num_chapters = len(str_book)
-get_chapter_summary(str_book[3])
+new_book = Book(file_path)
+shelf.store_book(new_book)
+get_chapter_summary(new_book.chapter_text(3))

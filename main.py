@@ -4,6 +4,7 @@ from google.genai import types
 
 #Imports from project
 import initial_setup
+from initial_setup import get_bookshelf
 from ebook_interaction import get_file_path, html_to_str, epub_to_html
 
 
@@ -11,7 +12,7 @@ from ebook_interaction import get_file_path, html_to_str, epub_to_html
 api_key = initial_setup.get_api_key()
 query_fiction = initial_setup.query_fiction
 query_non_fiction = initial_setup.query_non_fiction
-bookshelf = initial_setup.bookshelf
+bookshelf = get_bookshelf()
 
 #Function definitions
 def get_book_summary(chapter_as_str: str, summary_query = None):

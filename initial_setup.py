@@ -1,33 +1,28 @@
 from dotenv import load_dotenv
 import os
 from pathlib import Path
-import jsons
 import json
-from book_class import Book
+from core_classes import Bookshelf
 
 #Constants
 environment_file_path = Path(".env")
+shelf = Bookshelf()
 
 
-#Functions
-def get_api_key():
-    if environment_file_path.exists():
-        load_dotenv()
-        api_key = os.getenv("GEMINI_API_KEY")
-        print(api_key)
-        return api_key
-        #https://pypi.org/project/python-dotenv/
-    else:
-        try:
-            api_key = input("Please enter your gemini API key: ")
-            with open(".env", "w") as environment:
-                environment.write(f"GEMINI_API_KEY = \"{api_key}\"")
-                #return api_key
-        except:
-            raise FileNotFoundError("There was an error writing the API_Keys, please manually create the environment file")
+#Getting API key and setting as environment variable
+if environment_file_path.exists():
+    load_dotenv()
+    api_key = os.getenv("GEMINI_API_KEY")
+else:
+    try:
+        api_key = input("Please enter your gemini API key: ")
+        with open(".env", "w") as environment:
+            environment.write(f"GEMINI_API_KEY = \"{api_key}\"")
+    except:
+        raise FileNotFoundError("There was an error writing the API_Keys, please manually create the environment file")
 
 
-#Loading files
+#Loading prompts
 try:
     with open("query_fiction.txt") as file:
         query_fiction = file.read()
@@ -37,13 +32,14 @@ try:
 except FileNotFoundError:
     raise FileNotFoundError("ERROR: could not find one of query_fiction.txt or query_non_fiction.txt.")
 
-def get_bookshelf():
-    try:
-        with open("bookshelf.json") as file:
-            bookshelf = json.load(file)
-    except FileNotFoundError:
-        print("Bookshelf file missing, creating empty bookshelf. Ignore if this is the first run.")
-        bookshelf = []
-        with open("bookshelf.json", 'w') as file:
-            pass
-    return bookshelf
+"""SHOULDN'T NEED THIS ANYMORE WITH BOOKSHELF CLASS REMOVE IF FUNCTIONAL"""
+# def get_bookshelf():
+#     try:
+#         with open("bookshelf.json") as file:
+#             bookshelf = json.load(file)
+#     except FileNotFoundError:
+#         print("Bookshelf file missing, creating empty bookshelf. Ignore if this is the first run.")
+#         bookshelf = []
+#         with open("bookshelf.json", 'w') as file:
+#             pass
+#     return bookshelf

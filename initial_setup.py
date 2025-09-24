@@ -2,7 +2,8 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 import jsons
-
+import json
+from book_class import Book
 
 #Constants
 environment_file_path = Path(".env")
@@ -39,7 +40,7 @@ except FileNotFoundError:
 def get_bookshelf():
     try:
         with open("bookshelf.json") as file:
-            bookshelf = jsons.load(file.read()) #This is causing issues. jsons doc gives more info on deserialisation. Need to find a way to seperate each book class.
+            bookshelf = json.load(file)
     except FileNotFoundError:
         print("Bookshelf file missing, creating empty bookshelf. Ignore if this is the first run.")
         bookshelf = []

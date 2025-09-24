@@ -68,7 +68,7 @@ class Book():
         pass #Should integrate epub_to_html into class first
 
 def store_book(book: Book):
-    with open("bookshelf", 'w') as bookshelf:
+    with open("bookshelf.json", 'w') as bookshelf:
         bookshelf.write(jsons.dumps(book, indent=4, sort_keys=True))
 
 

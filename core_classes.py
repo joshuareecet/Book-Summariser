@@ -7,32 +7,26 @@ class Book():
     def __init__(self, file_path: str):
         self._path: str = file_path
         _epub_book: ebooklib.epub.EpubBook = epub.read_epub(file_path)
+        self._length = 0
 
         #Getting the metadata using ebooklib
         author_metadata: str = _epub_book.get_metadata('DC','author')
         title_metadata: str = _epub_book.get_metadata('DC','title')
         language_metadata: str = _epub_book.get_metadata('DC','language') #this can return the format e.g. XML maybe we can use this
-        
+        id_metadata = _epub_book.get_metadata('DC','identifier')
+
         #Converting metadata into information for storage
         self._title = title_metadata[0][0] if title_metadata else "Unknown title"
         self._author: list = [str(a) for a in author_metadata] if author_metadata else "Unknown Author"
         self._language = language_metadata[0][0] if language_metadata else "Unknown Language"
+        self._id = id_metadata if id_metadata else "Unknown id"
         
-        #Initialising book info (THESSE SHOULD NOT BE STORED ANYMORE)
+        #Initialising book info 
         self._chapters_title = []
         self._chapters_text = []
         
-        self._length = 0
-
         #Populating book info
         self.epub_to_str(_epub_book)
-        
-        
-        """
-        self._length = #number of chapters
-        self._summary = [None for x in range(self._length)]        
-        self._full_summary = ""
-        """
 
     #Getters
     def author(self):
@@ -59,7 +53,7 @@ class Book():
     def set_title(self, title: str):
         self._title = title
     def set_language(self, lang: str):
-        self._language = lang 
+        self._language = lang
 
     def add_chapter_summary(self, chapter, summary): #Maybe this can be part of the bookshelf?
         pass
@@ -101,7 +95,18 @@ class Book():
             
             #Adding a chapter to length for every iteration
             self._length += 1
+    
     #Should add a to_dict function as this doesn't give me enough control over what is dumped using jsons
+    def to_dict(self):
+        attributes = {
+            "path" : self._path,
+            "author" : self._author,
+            "title" : self._title,
+            "language": self._language,
+            "length" : self._length,
+            "id" : self._id
+        }
+        return attributes
 
 
 class Bookshelf():
@@ -128,15 +133,23 @@ class Bookshelf():
             print("Something went wrong when decoding the bookshelf file. Please create a back-up to proceed")
 
     def store_book(self, new_book: Book):
-
+        attributes = new_book.to_dict()
+        
         for book in range(0,self._length):
-            if new_book._title in book['_title']: #this should change. we need a unique identifier in the book class for each book.
+            if attributes['title'] in book['_title']: #this should change. we need a unique identifier in the book class for each book.
                 print("Book already in library")
                 return
         else:
-            self._books.append(new_book)
+            # self._books.append(new_book)
+            # #Should we sort the bookshelf as we build it?
+            # with open("bookshelf.json", 'w') as bookshelf_file:
+            #     bookshelf_file.write(jsons.dumps(self._books))
+            # print("Book added to library")
+            # return
+            
+            self._books.append(attributes)
             #Should we sort the bookshelf as we build it?
             with open("bookshelf.json", 'w') as bookshelf_file:
-                bookshelf_file.write(jsons.dumps(self._books))
+                bookshelf_file.write(json.dumps(self._books))
             print("Book added to library")
             return

@@ -31,15 +31,3 @@ try:
         query_non_fiction = file.read()
 except FileNotFoundError:
     raise FileNotFoundError("ERROR: could not find one of query_fiction.txt or query_non_fiction.txt.")
-
-"""SHOULDN'T NEED THIS ANYMORE WITH BOOKSHELF CLASS REMOVE IF FUNCTIONAL"""
-# def get_bookshelf():
-#     try:
-#         with open("bookshelf.json") as file:
-#             bookshelf = json.load(file)
-#     except FileNotFoundError:
-#         print("Bookshelf file missing, creating empty bookshelf. Ignore if this is the first run.")
-#         bookshelf = []
-#         with open("bookshelf.json", 'w') as file:
-#             pass
-#     return bookshelf

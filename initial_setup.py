@@ -8,6 +8,11 @@ from core_classes import Bookshelf
 environment_file_path = Path(".env")
 shelf = Bookshelf()
 
+#Creating subdirectories
+ebook_dir_name = Path('ebooks')
+if ebook_dir_name.is_dir() == False:
+    ebook_dir_name.mkdir()
+    print("ts triggered again lol")
 
 #Getting API key and setting as environment variable
 if environment_file_path.exists():

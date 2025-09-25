@@ -42,7 +42,10 @@ def queryGemini(query: str):
   return response.text
 
 #RUN
-file_path = get_file_path()
-new_book = Book(file_path)
-shelf.store_book(new_book)
-#get_chapter_summary(new_book.chapter_text(3))
+def test():
+    file_path = get_file_path()
+    new_book = Book(file_path)
+    shelf.store_book(new_book)
+    get_chapter_summary(new_book.chapter_text(3))
+
+test()

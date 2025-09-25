@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 import json, jsons
 
 class Book():
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str = None):
+        #we need some way of rebuilding the book without the file path.. or maybe storing local copies of the book
         self._path: str = file_path
         _epub_book: ebooklib.epub.EpubBook = epub.read_epub(file_path)
         self._length = 0
@@ -39,6 +40,8 @@ class Book():
         return self._language
     def length(self):
         return self._length
+    def id(self):
+        return self._id
     def chapter_text(self, chapter_number):
         return self._chapters_text[chapter_number]
     def chapter_title(self, chapter_number):
@@ -54,8 +57,9 @@ class Book():
         self._title = title
     def set_language(self, lang: str):
         self._language = lang
-
-    def add_chapter_summary(self, chapter, summary): #Maybe this can be part of the bookshelf?
+    def add_chapter_summary(self, chapter, summary): 
+        # For adding ai generated summaries to the book object.
+        # Maybe this can be part of the bookshelf instead.
         pass
     
     #Core functionality
@@ -118,7 +122,7 @@ class Bookshelf():
         #Populating variables
         self.get_stored_books()
 
-
+    #Functions for interacting with storage
     def get_stored_books(self):
         try:
             with open("bookshelf.json") as file:
@@ -130,26 +134,34 @@ class Bookshelf():
             with open("bookshelf.json", 'w') as file:
                 pass
         except json.JSONDecodeError:
-            print("Something went wrong when decoding the bookshelf file. Please create a back-up to proceed")
-
+            print("Something went wrong when decoding the bookshelf file. Please create a back-up, and manually inspect to proceed")
+    
     def store_book(self, new_book: Book):
         attributes = new_book.to_dict()
         
-        for book in range(0,self._length):
-            if attributes['title'] in book['_title']: #this should change. should now check against id attribute.
+        for book in self._books:
+            if attributes['id'][0][0] in book['id'][0][0]: #this should change. should now check against id attribute.
                 print("Book already in library")
                 return
-        else:
-            # self._books.append(new_book)
-            # #Should we sort the bookshelf as we build it?
-            # with open("bookshelf.json", 'w') as bookshelf_file:
-            #     bookshelf_file.write(jsons.dumps(self._books))
-            # print("Book added to library")
-            # return
+        self._books.append(attributes)
+        #Should we sort the bookshelf as we build it?
+        with open("bookshelf.json", 'w') as bookshelf_file:
+            bookshelf_file.write(json.dumps(self._books))
+        print("Book added to library")
+        return
+    
+    #Functions for interacting with object
+    def books(self):
+        return self._books
             
-            self._books.append(attributes)
-            #Should we sort the bookshelf as we build it?
-            with open("bookshelf.json", 'w') as bookshelf_file:
-                bookshelf_file.write(json.dumps(self._books))
-            print("Book added to library")
-            return
+if __name__ == "__main__":
+    
+    #Testing storage function, could hardcode putting a duplicate book in?
+    from user_interaction import get_file_path
+    #file_path = get_file_path()
+    shelf = Bookshelf()
+    #new_book = Book(file_path)
+    #shelf.store_book(new_book)
+
+    for books in shelf.books():
+        print(books['title'])

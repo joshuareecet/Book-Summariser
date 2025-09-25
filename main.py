@@ -5,7 +5,7 @@ from google.genai import types
 #Imports from project
 import initial_setup
 from core_classes import Book
-from user_interaction import get_file_path
+from user_interaction import get_file_path, get_int
 
 #Loading constants + module variables
 query_fiction = initial_setup.query_fiction
@@ -41,11 +41,39 @@ def queryGemini(query: str):
   print(response.text)
   return response.text
 
+
+
 #RUN
 def test():
-    file_path = get_file_path()
-    new_book = Book(file_path)
-    shelf.store_book(new_book)
-    #get_chapter_summary(new_book.chapter_text(3))
+    prompt = ("Please select a mode using numbers 1-2: \n"
+    "1: Upload Book\n"
+    "2: Select from Library\n")
+    prompt_2 = "Please enter the corresponding number book you would like to summarise: "
+    prompt_3 = "Please enter the chapter number you would like to be summarised: "
+    prompt_4 = "Please select the type of book: \n" \
+    "1. Non fiction\n" \
+    "2. Fiction\n"
+
+
+    mode = get_int(prompt,0,3)
+    if mode == 1:
+        file_path = get_file_path()
+        shelf.add_book(file_path)
+
+    shelf.list_books()
+    number = get_int(prompt_2) - 1
+    target_book = shelf.get_book(number)
+
+    for chapter_title in target_book.chapter_titles():
+        print(chapter_title)
+
+    target_chapter = get_int(prompt_3)
+    text = target_book.chapter_text(target_chapter)
+    type = get_int(prompt_4,0,3)
+    if type == 1:
+        type = query_non_fiction
+    else:
+        type = query_fiction
+    get_chapter_summary(text, type)
 
 test()

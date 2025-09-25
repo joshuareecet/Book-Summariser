@@ -136,7 +136,7 @@ class Bookshelf():
         attributes = new_book.to_dict()
         
         for book in range(0,self._length):
-            if attributes['title'] in book['_title']: #this should change. we need a unique identifier in the book class for each book.
+            if attributes['title'] in book['_title']: #this should change. should now check against id attribute.
                 print("Book already in library")
                 return
         else:

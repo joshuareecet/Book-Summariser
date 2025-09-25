@@ -45,7 +45,7 @@ def queryGemini(query: str):
 def test():
     file_path = get_file_path()
     new_book = Book(file_path)
-    shelf.add_book(new_book)
+    shelf.store_book(new_book)
     #get_chapter_summary(new_book.chapter_text(3))
 
 test()

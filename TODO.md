@@ -4,15 +4,16 @@ TODO (HIGH to LOW priority):
     1.1 Book may not have any chapters at all? what do we do
     1.2 User does not have an epub, cannot escape the while loop
 
-2. Add book class: gives easy access to key features of the book even after processing:
-    2.1 Store gemini calls for chapter summaries (not sure about this feature anymore)
-    2.2 Integrate an SQL database for storage (definitely investigate)
+2. Book class:
+    2.1 Store gemini calls for chapter summaries (blows up storage so maybe not)
+    2.2 Switch to SQL database from json - either sqlalchemy or sqlite seem to be suited for this.
 
 3. Combine epub_to_html and html_to_str into one function / Make them class functions
     3.1 Add both str and html to the book class (done ?)
     3.2 Then can call straight from object of book class for searching in gemini (done ?)
     
-4. Add unique identifier for each stored book. Could use ISBN number. - easy implement now!
+4. Add unique identifier for each stored book. Could use ISBN number.
+    This is potentially implemented now. Need to research more into how id numbers are generated internally using ebooklib.
 
 5. Integrate with a book tracker
     5.1 Calibre - primary target

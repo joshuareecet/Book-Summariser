@@ -1,5 +1,8 @@
 TODO (HIGH to LOW priority): 
 
+
+0. FINISH FIND FUNCTION IN BOOKSHELF
+
 1. Add exceptions for edge cases e.g:
     1.1 Book may not have any chapters at all? what do we do
     1.2 User does not have an epub, cannot escape the while loop

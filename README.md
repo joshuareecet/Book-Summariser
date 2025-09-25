@@ -1,4 +1,4 @@
-# Book Summariser
+# Book Summariser (In Beta Development)
 A tool to generate summaries from ebooks (currently only in epub format).
 - Currently supports chapter by chapter summary generation
 
@@ -52,4 +52,4 @@ python main.py
 - [ ] Support for additional ebook formats (e.g. pdf)
 
 
-**Note**: This tool is designed for personal use and educational purposes. Please respect copyright laws and only process books you own or have permission to analyze.
+**Note**: This tool is designed for personal use and educational purposes, please respect copyright laws - use of AI features should be restricted to books you own, and any generated content is not to be distributed. If you use Gemini API to process ebooks, ensure that you are using the paid tier to opt out of data being used for training future models.

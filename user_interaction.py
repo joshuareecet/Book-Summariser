@@ -6,5 +6,13 @@ def get_file_path():
         book_path = tkinter.filedialog.askopenfilename(title = "Please select an ebook file.")
     return book_path
 
-if __name__ == "__main__":
-    pass
+def get_int(prompt: str, min = None, max = None):
+    output = int(input(prompt))
+    if min is not None and max is not None:
+        while output <= min or output >= max:
+            print(f"Please enter a valid number within (not inclusive of): \n"
+                  f"min: {min}\n"
+                  f"max: {max}"
+            )
+            output = int(input(prompt))
+    return output

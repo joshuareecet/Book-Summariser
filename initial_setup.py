@@ -12,7 +12,6 @@ shelf = Bookshelf()
 ebook_dir_name = Path('ebooks')
 if ebook_dir_name.is_dir() == False:
     ebook_dir_name.mkdir()
-    print("ts triggered again lol")
 
 #Getting API key and setting as environment variable
 if environment_file_path.exists():
@@ -34,5 +33,12 @@ try:
 
     with open("query_non_fiction.txt") as file:
         query_non_fiction = file.read()
+
+    with open("combine_part_summary.txt") as file:
+        combine_summary = file.read()
+
+    with open("book_part_summary.txt") as file:
+        part_summary = file.read()
+        
 except FileNotFoundError:
     raise FileNotFoundError("ERROR: could not find one of query_fiction.txt or query_non_fiction.txt.")

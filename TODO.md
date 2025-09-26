@@ -29,5 +29,7 @@ TODO (HIGH to LOW priority):
 7. Investigate running local LLM: https://github.com/abetlen/llama-cpp-python
     7.1 investigate hardware requirements
 
+8. Look into if sending the preivous chapter in addition to the current improves context for chapter summary 
+
 BUGS FOUND:
 1. if bookshelf.json exits but is empty breaks storage function

@@ -126,9 +126,15 @@ def select_book_type(target_book: Book, book_or_chap: int):
     )
     type = get_int(prompt,0,3)
     if type == 1:
-        type = query_non_fiction
+        if book_or_chap == 1:
+            pass # text file for part summary non-fiction
+        else:
+            type = query_non_fiction
     else:
-        type = query_fiction
+        if book_or_chap == 1:
+            pass #text file for part summary  fiction
+        else:
+            type = query_fiction
 
 
 

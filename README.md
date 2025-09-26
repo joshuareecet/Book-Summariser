@@ -1,19 +1,19 @@
 # Book Summariser (In Beta Development)
-A tool to generate summaries from ebooks (currently only in epub format).
-- Currently supports chapter by chapter summary generation
+A tool to generate summaries from ebooks (currently supports epub format).
 
 ## Features
 - **EPUB Support**: Read and process EPUB format ebooks
 - **AI-Powered Summaries**: Uses Google Gemini  for intelligent content analysis
 - **Dual Summary Modes**: 
-  - Chapter summary: choose the chapter you would like a summary generated of
-  - Full book summary: Uses a smart context maintaining algorithm to generate focused summaries of entire books. (This may perform better than native web-based AI chatbots at this task)
+  - Chapter summary: Generates summaries of individual chapters.
+  - Full book summary: Uses a smart context maintaining algorithm to generate focused summaries of entire books.
 - **Supports Fiction + Non Fiction**: 
   - Fiction / Story books: Character-focused summaries with detailed plot analysis for casual readers.
   - Non-fiction / Academic texts: Concept-focused summaries for scientific textbooks and literature.
-- **Maintains Context**:
+- **Maintains Context in larger texts**:
   - Splits larger books into sections, generating smaller summaries based on each section, then analysing each smaller summary to create a final detailed summary.
-
+- **Maintains a record of books**
+  - Records previously uploaded books, so you don't have to re-upload every time.
 
 ## Quick Start
 

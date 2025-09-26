@@ -149,53 +149,68 @@ class Book():
         """        
         #First convert epub to html format
         self._chapters_html = []
+        backup_titles = []
         #chapters = book.get_items_of_type(ebooklib.ITEM_DOCUMENT)
         for item in _epub_book.get_items():
             if item.get_type() == ebooklib.ITEM_DOCUMENT:
                 content = item.get_content()
-                #We can ignore any chapters that have less than 2000 characters in them - typically these are just badly encoded image files
+                #We can ignore any chapters that have less than 2000 characters in them 
                 min_character_count = 2000
                 if len(content) > min_character_count:
                     self._chapters_html.append(content)
+                    backup_titles.append(item.file_name)
 
         #Now we can extract the raw text from the html
         chapter_number = 0
-        for chapter in self._chapters_html:
+        for chapter, backup_title in zip(self._chapters_html, backup_titles):
             soup = BeautifulSoup(chapter, 'lxml-xml')
             
             #This section needs a severe cleanup ---------------------------------------------------------------------------------------------------------------------------
             #Title tag is usually somewhere in <head> <h1> or <h2>. If not it may be in <title> </title> as a last resort          
-            title_tag = soup.head
-            try:
-                self._chapters_title.append(title_tag['title'])
-            except (KeyError, TypeError):
-                try:
-                    title_tag = soup.h1
-                    self._chapters_title.append(title_tag['title'])
-                except (KeyError, TypeError) as error:
-                    try:
-                        title_tag = soup.h2
-                        self._chapters_title.append(title_tag['title'])
-                    except (KeyError, TypeError) as error:
-                        try:
-                            title_tag = soup.title
-                            last_resort = str(title_tag.string)
-                            self._chapters_title.append(last_resort)
-                        except (KeyError, TypeError, AttributeError) as error:
-                            #Checking if any of the title tags contain text
-                            title_tags = soup.find(['h1','h2','h3','h4','h5','title'])
-                            if title_tags and title_tags.string:
-                                self._chapters_title.append(f"{str(chapter_number)}: {title_tags.string}")
-                            else:
-                                title_tag = soup.title
-                                h1_tag = soup.h1
-                                if title_tag and title_tag.contents:
-                                    self._chapters_title.append(f"{chapter_number}: {title_tag.contents}")
-                                elif h1_tag and h1_tag.contents:
-                                    #For whatever reason it seems to be convention to store the title as the last object in a list in <h1>
-                                    self._chapters_title.append(f"{chapter_number}: {h1_tag.contents[-1]}")
-                                else:
-                                    self._chapters_title.append(f"{chapter_number}: Unknown Chapter Title")
+            title_tags = [soup.title, soup.head, soup.h1, soup.h2]
+            secondary_tags = ['title', 'head', 'h1', 'h2']
+            
+            for tag, tag2 in zip(title_tags, secondary_tags):
+                if tag and tag.attrs and "title" in tag.attrs:
+                    self._chapters_title.append(f"{str(chapter_number)}: {tag['title']}")
+                    break
+                elif soup.find(tag2) and soup.find(tag2).string:
+                    self._chapters_title.append(f"{str(chapter_number)}: {soup.find(tag2).string}")
+                    break
+            else:
+                self._chapters_title.append(f"{str(chapter_number)}: {backup_title}")
+            
+            # title_tag = soup.head
+            # try:
+            #     self._chapters_title.append(title_tag['title'])
+            # except (KeyError, TypeError):
+                # try:
+                #     title_tag = soup.h1
+                #     self._chapters_title.append(title_tag['title'])
+                # except (KeyError, TypeError) as error:
+                #     try:
+                #         title_tag = soup.h2
+                #         self._chapters_title.append(title_tag['title'])
+                #     except (KeyError, TypeError) as error:
+                #         try:
+                #             title_tag = soup.title
+                #             last_resort = str(title_tag.string)
+                #             self._chapters_title.append(last_resort)
+                #         except (KeyError, TypeError, AttributeError) as error:
+                #             #Checking if any of the title tags contain text
+                #             title_tags = soup.find(['h1','h2','h3','h4','h5','title'])
+                #             if title_tags and title_tags.string:
+                #                 self._chapters_title.append(f"{str(chapter_number)}: {title_tags.string}")
+                #             else:
+                #                 title_tag = soup.title
+                #                 h1_tag = soup.h1
+                #                 if title_tag and title_tag.contents:
+                #                     self._chapters_title.append(f"{chapter_number}: {title_tag.contents}")
+                #                 elif h1_tag and h1_tag.contents:
+                #                     #For whatever reason it seems to be convention to store the title as the last object in a list in <h1>
+                #                     self._chapters_title.append(f"{chapter_number}: {h1_tag.contents[-1]}")
+                #                 else:
+                #                     self._chapters_title.append(f"{chapter_number}: Unknown Chapter Title")
             chapter_number += 1
             #end of cleanup section --------------------------------------------------------------------------------------------------------------------------------------
             #Section for extracting chapter raw text

@@ -83,13 +83,13 @@ class Book():
     def length(self):
         """
         Returns:
-            self._length (int): The number of chapters
+            self._length (int): The number of chapters - 0 = 0 chapters
         """
         return self._length
     def id(self):
         """
         Returns:
-            self._id (list): A list ****************************************
+            self._id (list): A list **************************************** needs to be finished --------------------------------------------------------------------------
         """
         return self._id
     def chapter_text(self, chapter_number):
@@ -141,11 +141,14 @@ class Book():
     
     #Core functionality
     def epub_to_str(self, _epub_book):
-        """Function for converting an epub to string format for easer processing
+        """
+        Function converts an epub to string format for processing
+        
         Side effects:
             self._chapters_html (list) -> a list with the html version of each chapter at each index
             self._chapters_text (list) -> The raw text version of self._chapters_html
             self._chapters_title (list) -> A list containing the titles of each chapter
+            self._length (int) -> The total num. of chapters
         """        
         #First convert epub to html format
         self._chapters_html = []
@@ -160,16 +163,14 @@ class Book():
                     self._chapters_html.append(content)
                     backup_titles.append(item.file_name)
 
-        #Now we can extract the raw text from the html
         chapter_number = 0
         for chapter, backup_title in zip(self._chapters_html, backup_titles):
             soup = BeautifulSoup(chapter, 'lxml-xml')
             
-            #This section needs a severe cleanup ---------------------------------------------------------------------------------------------------------------------------
-            #Title tag is usually somewhere in <head> <h1> or <h2>. If not it may be in <title> </title> as a last resort          
+            #Extracting the title tag 
             title_tags = [soup.title, soup.head, soup.h1, soup.h2]
             secondary_tags = ['title', 'head', 'h1', 'h2']
-            
+
             for tag, tag2 in zip(title_tags, secondary_tags):
                 if tag and tag.attrs and "title" in tag.attrs:
                     self._chapters_title.append(f"{str(chapter_number)}: {tag['title']}")
@@ -179,45 +180,13 @@ class Book():
                     break
             else:
                 self._chapters_title.append(f"{str(chapter_number)}: {backup_title}")
-            
-            # title_tag = soup.head
-            # try:
-            #     self._chapters_title.append(title_tag['title'])
-            # except (KeyError, TypeError):
-                # try:
-                #     title_tag = soup.h1
-                #     self._chapters_title.append(title_tag['title'])
-                # except (KeyError, TypeError) as error:
-                #     try:
-                #         title_tag = soup.h2
-                #         self._chapters_title.append(title_tag['title'])
-                #     except (KeyError, TypeError) as error:
-                #         try:
-                #             title_tag = soup.title
-                #             last_resort = str(title_tag.string)
-                #             self._chapters_title.append(last_resort)
-                #         except (KeyError, TypeError, AttributeError) as error:
-                #             #Checking if any of the title tags contain text
-                #             title_tags = soup.find(['h1','h2','h3','h4','h5','title'])
-                #             if title_tags and title_tags.string:
-                #                 self._chapters_title.append(f"{str(chapter_number)}: {title_tags.string}")
-                #             else:
-                #                 title_tag = soup.title
-                #                 h1_tag = soup.h1
-                #                 if title_tag and title_tag.contents:
-                #                     self._chapters_title.append(f"{chapter_number}: {title_tag.contents}")
-                #                 elif h1_tag and h1_tag.contents:
-                #                     #For whatever reason it seems to be convention to store the title as the last object in a list in <h1>
-                #                     self._chapters_title.append(f"{chapter_number}: {h1_tag.contents[-1]}")
-                #                 else:
-                #                     self._chapters_title.append(f"{chapter_number}: Unknown Chapter Title")
-            chapter_number += 1
-            #end of cleanup section --------------------------------------------------------------------------------------------------------------------------------------
-            #Section for extracting chapter raw text
+
+            #Extracting each chapter's raw text
             text = [soup.get_text()]
             self._chapters_text.append(' '.join(text))
             
-            #Adding a chapter to length for every iteration
+            #Updating chapter number and self._length each loop
+            chapter_number += 1
             self._length += 1
     
     def to_dict(self):

@@ -1,0 +1,11 @@
+I am providing you with a book in multiple parts to be summarized. This is [Part X of Y]. Your task is to create a detailed summary of ONLY this part.
+
+Your summary must capture:
+- **Key Plot Events:** What are the most significant events that happen in this section?
+- **Character Development:** How do the main characters change or what new insights do we gain about them? Note any new important characters introduced.
+- **World-Building and Lore:** What new information is revealed about the world, its rules, magic systems, or history?
+- **Set-up and Foreshadowing:** Note any new conflicts, mysteries, or clues that seem important for future parts of the story.
+
+The summary should be comprehensive enough to serve as a building block for a final, full-book summary later. At the end of your response, please state "Awaiting next part."
+
+Here is the text for this part:

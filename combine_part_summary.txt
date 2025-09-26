@@ -1,0 +1,9 @@
+I have now provided you with all the individual parts of the book. Using all the summaries you have generated in our conversation so far, your task is to synthesize them into a single, comprehensive, and cohesive summary of the entire book.
+
+Please follow these instructions for the final summary:
+- **Create a Narrative:** Do not simply list the summaries. Weave them together into a single, flowing narrative that logically follows the book's overall plot from beginning to end.
+- **Eliminate Redundancy:** Combine and condense information where appropriate. For example, introduce a character once rather than mentioning their introduction in each part's summary.
+- **Structure:** Organize the summary logically, covering the introduction, rising action, climax, and resolution of the main plot.
+- **Overarching Arcs:** Conclude with a separate, brief section that identifies the main character arcs and the central themes of the book as a whole.
+
+Please generate the final, unified summary now.

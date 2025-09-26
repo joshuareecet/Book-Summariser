@@ -3,6 +3,7 @@ TODO (HIGH to LOW priority):
 
 0. FINISH FIND FUNCTION IN BOOKSHELF
 0. IMPLEMENT A WARNING FOR EXTREMELY LONG BOOKS!
+0. Let the user add custom flags to the summary during runtime
 
 1. Add exceptions for edge cases e.g:
     1.1 Book may not have any chapters at all? what do we do

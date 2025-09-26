@@ -6,8 +6,13 @@ A tool to generate summaries from ebooks (currently only in epub format).
 - **EPUB Support**: Read and process EPUB format ebooks
 - **AI-Powered Summaries**: Uses Google Gemini  for intelligent content analysis
 - **Dual Summary Modes**: 
-  - Fiction books: Character-focused summaries with plot analysis
-  - Non-fiction books: Concept-focused summaries with key definitions
+  - Chapter summary: choose the chapter you would like a summary generated of
+  - Full book summary: Uses a smart context maintaining algorithm to generate focused summaries of entire books. (This may perform better than native web-based AI chatbots at this task)
+- **Supports Fiction + Non Fiction**: 
+  - Fiction / Story books: Character-focused summaries with detailed plot analysis for casual readers.
+  - Non-fiction / Academic texts: Concept-focused summaries for scientific textbooks and literature.
+- **Maintains Context**:
+  - Splits larger books into sections, generating smaller summaries based on each section, then analysing each smaller summary to create a final detailed summary.
 
 
 ## Quick Start
@@ -45,8 +50,8 @@ python main.py
 ```
 
 ### Planned Features
-- [ ] Enhanced Book class for storage of key book attributes and summaries.
-- [ ] Searching Book classes for previously generated summaries to reduce gemini API usage.
+- [ ] Integration of local LLM for processing of books (using meta Llama models)
+- [ ] Searching Book classes for previously generated summaries to reduce gemini API / local LLM usage.
 - [ ] Calibre integration for book management
 - [ ] GUI interface
 - [ ] Support for additional ebook formats (e.g. pdf)

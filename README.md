@@ -58,3 +58,5 @@ python main.py
 
 
 **Note**: This tool is designed for personal use and educational purposes, please respect copyright laws - use of AI features should be restricted to books you own, and any generated content is not to be distributed. If you use Gemini API to process ebooks, ensure that you are using the paid tier to opt out of data being used for training future models.
+
+https://github.com/joshuareecet/Book-Summariser

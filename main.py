@@ -2,26 +2,23 @@
 from google import genai
 from google.genai import types
 from time import sleep #to limit the no. of requests per minute on free api
+from llama_cpp import Llama
 
 #Imports from project
 import initial_setup
 from core_classes import Book
 from user_interaction import get_file_path, get_int
 
-#Loading constants + module variables
+#Importing constants + module variables
+from initial_setup import (combine_summary, part_summary, 
+                           query_fiction, query_non_fiction, local_model,
+                           shelf, use_local_model, context_window_limit, gpu_layers)
 
-combine_summary = initial_setup.combine_summary
-part_summary = initial_setup.part_summary
-query_fiction = initial_setup.query_fiction
-query_non_fiction = initial_setup.query_non_fiction
-
-shelf = initial_setup.shelf
-gemini_token_limit = 250000 
+#Setting constants
+gemini_token_limit = 250000 #for gemini 2.5 flash. maybe can add option to use pro?
 chars_per_token = 3
 summary_limit = gemini_token_limit - (len(part_summary)/chars_per_token)
 
-
-    
 #Function definitions
 def get_summary(chapter_as_str: str, summary_query = query_fiction):
     """Queries Gemini API to get a summary of the chapter
@@ -31,12 +28,36 @@ def get_summary(chapter_as_str: str, summary_query = query_fiction):
     Returns:
         summary (str): The summary of the chapter
     """
-    response = queryGemini(query=(summary_query+chapter_as_str))
-    return response
+    query = summary_query + chapter_as_str
+    
+    if use_local_model == False:
+        
+        response = queryGemini(query)
+        return response
+    
+    elif use_local_model == True and local_model != None:
+        
+        #loading model
+        llm = Llama(
+        model_path = local_model._raw_path,
+        n_gpu_layers = gpu_layers, 
+        # seed=1337, # Uncomment to set a specific seed
+        n_ctx = int(context_window_limit / 10) # .env file this
+        )
+
+        #generating response
+        response = llm(
+            query, # Prompt
+            max_tokens = None, # Generate up to 32 tokens, set to None to generate up to the end of the context window
+            stop = None, 
+            echo = False #
+        ) # Generate a completion, can also call create_completion
+    else:
+        print("Something went wrong loading the local model.")
 
 def get_book_summary(book: Book, summary_query = None):
     print("Please wait, this may take a long time....")
-    joined_chapters = join_chapters(book)
+    joined_chapters = join_chapters(book) 
     parts = []
     for query in joined_chapters:
         appender = get_summary(query,part_summary)
@@ -70,10 +91,32 @@ def join_chapters(target_book: Book):
         current_chapter += 1
     return joined_chapters
 
+def join_long_chapter(target_book: Book, current_chapter):
+    """ 
+    WORK IN PROGRESS
+    Arguments:
+        current_chapter (int): The target chapter to split
+    Returns:
+        split_chapter (list[str]): A list containing a split version of each chapter within the context window limit
+    
+    """
+    
+    text = target_book.chapter_text(current_chapter)
+    split_chapter = []
+    index = 0
+    length = 0
+    for chars in text:
+        if length < summary_limit:
+            split_chapter[index] = ''.join(chars)
+        else:
+            index += 1
+            length = 0
+    return split_chapter
+
+
 def queryGemini(query: str):
     """Sends query to gemini and returns the response text
     """
-    # The client gets the API key from the environment variable `GEMINI_API_KEY`.
     client = genai.Client()
     response = client.models.generate_content(
         model="gemini-2.5-flash",
@@ -124,21 +167,36 @@ def select_book_type(target_book: Book, book_or_chap: int):
         "1. Non fiction\n" \
         "2. Fiction\n"
     )
-    type = get_int(prompt,0,3)
-    if type == 1:
+
+    book_type = get_int(prompt,0,3)
+    if book_type == 1:
         if book_or_chap == 1:
-            pass # text file for part summary non-fiction
+            #TEMPORARY ----------------------------
+            type = query_non_fiction
+            # text file for part summary non-fiction
         else:
             type = query_non_fiction
     else:
         if book_or_chap == 1:
-            pass #text file for part summary  fiction
+            #TEMPORARY ----------------------------
+            type = query_fiction
+            #text file for part summary  fiction
+            
         else:
             type = query_fiction
 
+    prompt = (
+        "Would you like to add custom flags to the prompt?\n" \
+        "1. Yes\n" \
+        "2. No \n"
+    )
 
-
-
+    flags = get_int(prompt, min=0, max=3)
+    if flags == 1: #yes custom flags
+        flags = input("Please enter the flags to append to the prompt: \n")
+        type += "".join(f"User custom flags to use are: {flags}. \n The book text is as follows: \n")
+    if flags == 2: #no custom flags
+        type += "".join(f"No user custom flags, the text is as follows: \n")
     if book_or_chap == 1:
         response = get_book_summary(target_book)
         print(response)
@@ -153,37 +211,7 @@ def select_book_type(target_book: Book, book_or_chap: int):
         print(response)
 
 
-
-#RUN
-def test2():
-    
-
-    prompt_2 = "Please enter the corresponding number book you would like to summarise: "
-    prompt_3 = "Please enter the chapter number you would like to be summarised: "
-    prompt_4 = ("Please select the type of book: \n" \
-                "1. Non fiction\n" \
-                "2. Fiction\n")
-
-
-
-    shelf.list_books()
-    number = get_int(prompt_2) - 1
-    target_book = shelf.get_book(number)
-
-    for chapter_title in target_book.chapter_titles():
-        print(chapter_title)
-
-    target_chapter = get_int(prompt_3)
-    text = target_book.chapter_text(target_chapter)
-    type = get_int(prompt_4,0,3)
-    if type == 1:
-        type = query_non_fiction
-    else:
-        type = query_fiction
-    response = get_summary(text, type)
-    print(response)
-
-def test():
+def start():
     select_mode()
 
-test()
+start()

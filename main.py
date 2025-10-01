@@ -14,6 +14,12 @@ from initial_setup import (combine_summary, part_summary,
                            query_fiction, query_non_fiction, local_model,
                            shelf, use_local_model, context_window_limit, gpu_layers)
 
+print(r"""
+  ___           _     ___                           _             
+ | _ ) ___  ___| |__ / __|_  _ _ __  _ __  __ _ _ _(_)___ ___ _ _ 
+ | _ \/ _ \/ _ \ / / \__ \ || | '  \| '  \/ _` | '_| (_-</ -_) '_|
+ |___/\___/\___/_\_\ |___/\_,_|_|_|_|_|_|_\__,_|_| |_/__/\___|_|  
+""")
 #Setting constants
 gemini_token_limit = 250000 #for gemini 2.5 flash. maybe can add option to use pro?
 chars_per_token = 3
@@ -42,7 +48,7 @@ def get_summary(chapter_as_str: str, summary_query = query_fiction):
         model_path = local_model._raw_path,
         n_gpu_layers = gpu_layers, 
         # seed=1337, # Uncomment to set a specific seed
-        n_ctx = int(context_window_limit / 10) # .env file this
+        n_ctx = int(context_window_limit / 30) # .env file this
         )
 
         #generating response
@@ -52,10 +58,11 @@ def get_summary(chapter_as_str: str, summary_query = query_fiction):
             stop = None, 
             echo = False #
         ) # Generate a completion, can also call create_completion
+        return response
     else:
         print("Something went wrong loading the local model.")
 
-def get_book_summary(book: Book, summary_query = None):
+def get_book_summary(book: Book):
     print("Please wait, this may take a long time....")
     joined_chapters = join_chapters(book) 
     parts = []
@@ -127,24 +134,42 @@ def queryGemini(query: str):
     )
     return response.text
 
+
+#Logic for running script
+def start():
+    select_mode()
+
 def select_mode():
     prompt = (
         "Please select a mode using numbers 1-2: \n" \
-        "1: Upload Book\n" \
-        "2: Select from Library\n"
+        "1: Upload Book (Summary Generation)\n" \
+        "2: Select from Library (Summary Generation)\n"
+        #"3: Open Library\n"
             )
     mode = get_int(prompt,0,3)
     if mode == 1:
         file_path = get_file_path()
         shelf.add_book(file_path)
-    
-    #move to next
-    select_book()
+    elif mode == 2:
+        select_book()
+    elif mode == 3:
+        browse_library()
+
+def browse_library():
+    shelf.list_books()
+    prompt = """
+    Would you like to:\n
+    1. Rate a book
+    2. View book information
+    3. Sort books by Author / Rating / Publish date 
+    """
 
 def select_book():
     shelf.list_books()
+    print("")
     prompt_2 = "Please enter the corresponding number book you would like to summarise: "
     number = get_int(prompt_2) - 1
+    print("")
     target_book = shelf.get_book(number)
     
     #move to next -> carry target_book
@@ -197,6 +222,8 @@ def select_book_type(target_book: Book, book_or_chap: int):
         type += "".join(f"User custom flags to use are: {flags}. \n The book text is as follows: \n")
     if flags == 2: #no custom flags
         type += "".join(f"No user custom flags, the text is as follows: \n")
+    
+    #Generating summary
     if book_or_chap == 1:
         response = get_book_summary(target_book)
         print(response)
@@ -209,9 +236,12 @@ def select_book_type(target_book: Book, book_or_chap: int):
     
         response = get_summary(text, type)
         print(response)
-
-
-def start():
-    select_mode()
+    
+    stop_or_restart()
+    
+def stop_or_restart():
+    print("")
+    input("Press enter to restart...")
+    start()
 
 start()

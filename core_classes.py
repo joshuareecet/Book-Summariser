@@ -91,7 +91,11 @@ class Book():
         Returns:
             self._id (list): A list **************************************** needs to be finished --------------------------------------------------------------------------
         """
-        return self._id
+        return list(self._id)
+    def uuid(self):
+        uuid = str(self._id[0][0])
+        return uuid
+    
     def chapter_text(self, chapter_number):
         """
         Arguments:
@@ -105,13 +109,13 @@ class Book():
         Returns:
             self._chapters_title (list): A list containing the chapter titles
         """
-        return self._chapters_title
+        return list(self._chapters_title)
     
     #Setters
     def set_author(self, author: list): #should add way to input multiple authors. Authors should be a list of strings.
         """
         Arguments:
-            author (list): A list of strings containing the author names
+            author : Either a list of strings or a string containing the author name / names
         """
         self._author = author
     def _set_path(self, path: Path):
@@ -191,7 +195,6 @@ class Book():
     
     def to_dict(self):
         """A function to translate the core attributes of the class to a dictionary
-        
         """
         attributes = {
             "path" : str(self._path),
@@ -202,7 +205,17 @@ class Book():
             "id" : self._id
         }
         return attributes
-
+    
+    def to_list(self): 
+        attributes = [
+            self.uuid(),      
+            self._path,
+            self._title,          
+            self._author if isinstance(self._author, str) else self._author.copy(),
+            self._language,       
+            self._length
+        ]
+        return attributes
 
 class Bookshelf():
     def __init__(self):
@@ -339,3 +352,20 @@ class Bookshelf():
         for book in self.books():
             print(f"{i}: {book.title()}")
             i+=1
+
+
+if __name__ == "__main__":
+    fake_shelf = Bookshelf()
+    import tkinter, tkinter.filedialog
+    
+    def get_file_path():
+        book_path = ""
+        while book_path.endswith('.epub') is not True:
+            book_path = tkinter.filedialog.askopenfilename(title = "Please select an ebook file.")
+        return book_path
+
+
+    path = get_file_path()
+    new_book = Book()
+    new_book.populate(path)
+    print(new_book.id())

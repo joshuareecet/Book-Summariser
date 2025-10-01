@@ -7,7 +7,12 @@ def get_file_path():
     return book_path
 
 def get_int(prompt: str, min = None, max = None):
-    output = int(input(prompt))
+    output = input(prompt)
+    try:
+        output = int(output)
+    except ValueError:
+        output = get_int(prompt, min, max)
+
     if min is not None and max is not None:
         while output <= min or output >= max:
             print(f"Please enter a valid number within (not inclusive of): \n"
@@ -15,4 +20,4 @@ def get_int(prompt: str, min = None, max = None):
                   f"max: {max}"
             )
             output = int(input(prompt))
-    return output
+    return output   

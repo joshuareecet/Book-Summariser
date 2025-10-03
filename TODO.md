@@ -1,12 +1,5 @@
 TODO (HIGH to LOW priority): 
 
-0. In initial_setup, add a function to download the reccomended model automatically if no model is found:
-from llama_cpp import Llama
-
-llm = Llama.from_pretrained(
-	repo_id="bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
-	filename="Meta-Llama-3.1-8B-Instruct-IQ2_M.gguf",
-)
 0. Write pythonic getter and setters for Book and Bookshelf classes  
 0. FINISH FIND FUNCTION IN BOOKSHELF
 0. IMPLEMENT A WARNING FOR EXTREMELY LONG BOOKS!

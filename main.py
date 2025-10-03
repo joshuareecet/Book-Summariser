@@ -11,8 +11,9 @@ from user_interaction import get_file_path, get_int
 
 #Importing constants + module variables
 from initial_setup import (combine_summary, part_summary, 
-                           query_fiction, query_non_fiction, local_model,
-                           shelf, use_local_model, context_window_limit, gpu_layers)
+                           query_fiction, query_non_fiction, combine_chunk_fiction,
+                           combine_chunk_non_fiction, chunk_fiction, chunk_non_fiction,
+                           local_model, shelf, use_local_model, context_window_limit, gpu_layers) # (lol)
 
 print(r"""
   ___           _     ___                           _             
@@ -20,6 +21,7 @@ print(r"""
  | _ \/ _ \/ _ \ / / \__ \ || | '  \| '  \/ _` | '_| (_-</ -_) '_|
  |___/\___/\___/_\_\ |___/\_,_|_|_|_|_|_|_\__,_|_| |_/__/\___|_|  
 """)
+
 #Setting constants
 gemini_token_limit = 250000 #for gemini 2.5 flash. maybe can add option to use pro?
 chars_per_token = 3
@@ -62,17 +64,26 @@ def get_summary(chapter_as_str: str, summary_query = query_fiction):
     else:
         print("Something went wrong loading the local model.")
 
-def get_book_summary(book: Book):
+def get_book_summary(book: Book, type: str):
+    
     print("Please wait, this may take a long time....")
     joined_chapters = join_chapters(book) 
     parts = []
+    
+    #Getting summaries for each individual chunk and joining them
+    query_wait_time = 15     #we can do 5 queries per minute on free gemini api, so around once every 12 seconds should stop us being rate limited.
+
     for query in joined_chapters:
-        appender = get_summary(query,part_summary)
+        appender = get_summary(query,type)
         parts.append(appender)
-        delay = 15 #we can do 5 queries per minute on free gemini api, so once every 12 seconds. unfortunately this just doesnt work so limiting to once per minute.
-        sleep(delay)
+        sleep(query_wait_time)
     final_summary = "".join(parts)
-    response = get_summary(final_summary, combine_summary)
+    
+    if type == chunk_fiction:
+        response = get_summary(final_summary, combine_chunk_fiction)
+    elif type == chunk_non_fiction:
+        response = get_summary(final_summary, combine_chunk_non_fiction)
+    
     return response
 
 def join_chapters(target_book: Book):
@@ -197,20 +208,16 @@ def select_book_type(target_book: Book, book_or_chap: int):
     )
 
     book_type = get_int(prompt,0,3)
-    if book_type == 1:
-        if book_or_chap == 1:
-            #TEMPORARY ----------------------------
-            type = query_non_fiction
-            # text file for part summary non-fiction
-        else:
+    #THIS NEEDS TO BE MORE DESCRIPTIVE
+    if book_type == 1: 
+        if book_or_chap == 1:       #1 is whole book
+            type = chunk_non_fiction
+        else:                       #2 is chapter
             type = query_non_fiction
     else:
-        if book_or_chap == 1:
-            #TEMPORARY ----------------------------
-            type = query_fiction
-            #text file for part summary  fiction
-            
-        else:
+        if book_or_chap == 1:       #1 is whole book
+            type = chunk_fiction            
+        else:                       #2 is chapter
             type = query_fiction
 
     prompt = (
@@ -228,7 +235,7 @@ def select_book_type(target_book: Book, book_or_chap: int):
     
     #Generating summary
     if book_or_chap == 1:
-        response = get_book_summary(target_book)
+        response = get_book_summary(target_book, type)
         print(response)
     else:
         prompt = "Please enter the chapter number you would like to be summarised: "

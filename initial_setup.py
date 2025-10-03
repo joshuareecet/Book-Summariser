@@ -132,6 +132,18 @@ try:
 
     with open(prompts_dir / "book_part_summary.txt") as file:
         part_summary = file.read()
-        
+    
+    with open(prompts_dir / "chunk_fiction.txt") as file:
+        chunk_fiction = file.read()
+
+    with open(prompts_dir / "chunk_non_fiction.txt") as file:
+        chunk_non_fiction = file.read()
+
+    with open(prompts_dir / "combine_chunk_fiction.txt") as file:
+        combine_chunk_fiction = file.read()
+    
+    with open(prompts_dir / "combine_chunk_non_fiction.txt") as file:
+        combine_chunk_non_fiction = file.read()
+
 except FileNotFoundError:
     raise FileNotFoundError("ERROR: could not find one of query_fiction.txt or query_non_fiction.txt.")

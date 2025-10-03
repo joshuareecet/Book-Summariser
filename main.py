@@ -6,7 +6,7 @@ from llama_cpp import Llama
 
 #Imports from project
 import initial_setup
-from core_classes import Book
+from core import Book, Bookshelf
 from user_interaction import get_file_path, get_int
 
 #Importing constants + module variables
@@ -89,7 +89,7 @@ def join_chapters(target_book: Book):
     current_chapter = 0
     current_index = 0
     current_length = len(joined_chapters)+len(target_book.chapter_text(current_chapter))
-    while current_chapter  < target_book.length()-1:
+    while current_chapter  < target_book.length-1:
         if current_length > summary_limit:
             current_index += 1
             joined_chapters.append("")
@@ -147,6 +147,7 @@ def select_mode():
         #"3: Open Library\n"
             )
     mode = get_int(prompt,0,3)
+    
     if mode == 1:
         file_path = get_file_path()
         shelf.add_book(file_path)
@@ -154,6 +155,8 @@ def select_mode():
         select_book()
     elif mode == 3:
         browse_library()
+    
+    select_book()
 
 def browse_library():
     shelf.list_books()

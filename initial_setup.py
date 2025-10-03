@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 import json
-from core_classes import Bookshelf
+from core import Bookshelf
 
 #Constants
 root_dir = fake = Path(__file__).parent

@@ -64,7 +64,7 @@ def get_summary(chapter_as_str: str, summary_query = query_fiction):
     else:
         print("Something went wrong loading the local model.")
 
-def get_book_summary(book: Book, type: str):
+def get_book_summary(book: Book, chunk_type: str, combiner_type: str):
     
     print("Please wait, this may take a long time....")
     joined_chapters = join_chapters(book) 
@@ -74,16 +74,12 @@ def get_book_summary(book: Book, type: str):
     query_wait_time = 15     #we can do 5 queries per minute on free gemini api, so around once every 12 seconds should stop us being rate limited.
 
     for query in joined_chapters:
-        appender = get_summary(query,type)
+        appender = get_summary(query,chunk_type)
         parts.append(appender)
         sleep(query_wait_time)
     final_summary = "".join(parts)
     
-    if type == chunk_fiction:
-        response = get_summary(final_summary, combine_chunk_fiction)
-    elif type == chunk_non_fiction:
-        response = get_summary(final_summary, combine_chunk_non_fiction)
-    
+    response = get_summary(final_summary, combiner_type)
     return response
 
 def join_chapters(target_book: Book):
@@ -212,11 +208,13 @@ def select_book_type(target_book: Book, book_or_chap: int):
     if book_type == 1: 
         if book_or_chap == 1:       #1 is whole book
             type = chunk_non_fiction
+            combiner_type = combine_chunk_non_fiction
         else:                       #2 is chapter
             type = query_non_fiction
     else:
         if book_or_chap == 1:       #1 is whole book
-            type = chunk_fiction            
+            type = chunk_fiction
+            combiner_type = combine_chunk_fiction          
         else:                       #2 is chapter
             type = query_fiction
 
@@ -235,7 +233,7 @@ def select_book_type(target_book: Book, book_or_chap: int):
     
     #Generating summary
     if book_or_chap == 1:
-        response = get_book_summary(target_book, type)
+        response = get_book_summary(target_book, type, combiner_type)
         print(response)
     else:
         prompt = "Please enter the chapter number you would like to be summarised: "

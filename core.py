@@ -300,6 +300,7 @@ class Bookshelf():
         for book in self._books:
             print(f"{i}: {book.title}")
             i+=1
+        return self._books
 
 con = sqlite3.connect("bookshelf.db")
 cur = con.cursor()

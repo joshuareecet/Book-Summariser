@@ -176,6 +176,9 @@ def browse_library():
 
 def select_book():
     shelf.list_books()
+    if shelf.list_books() == []:
+        print("\nBookshelf is empty, please add a book!\n")
+        select_mode()
     print("")
     prompt_2 = "Please enter the corresponding number book you would like to summarise: "
     number = get_int(prompt_2) - 1

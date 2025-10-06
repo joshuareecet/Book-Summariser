@@ -1,13 +1,16 @@
+#For fuzzy matching during search
 from rapidfuzz import fuzz
 
+#For SQL database storage
+import sqlite3, shutil, os, ebooklib
+from pathlib import Path
+from user_interaction import get_int
 
-import sqlite3, ebooklib
-
+#For parsing books
 from bs4 import BeautifulSoup
 from ebooklib import epub
-from pathlib import Path
-import shutil
-import os
+
+
 
 """
 Currently non-functional.
@@ -213,7 +216,7 @@ class Book():
             chapter_number += 1
             self._length += 1
 
-
+#new workflow -> bookshelf just finds in the sql database and pulls file data when you need!
 class Bookshelf():
     def __init__(self):
         self._books = []
@@ -264,21 +267,15 @@ class Bookshelf():
         self._books.append(new_book)
         add_to_bookshelf(new_book)
 
-    def find(self, target: str):
+    def find(self):
         """
         Arguments:
             target (str): The book id
         Returns:
             index : The index of the item in self._books
         """
-        raise NotImplementedError("Bookshelf.find function not implemented!")
-        index = 0
-        for book in self._books:
-            if book.id == target:
-                break
-            else:
-                index[0] += 1
-        return index
+        return find_by_title() #Fix this implementation
+    
     def get_book(self, target):
         """Finds a book in self._books
         Arguments:
@@ -289,8 +286,21 @@ class Bookshelf():
         book = self._books[target]
         return book
 
-    def remove(self, target):
-        raise NotImplementedError("Bookshelf.remove function not implemented")
+    def remove(self, target: Book = None):
+        if target == None:
+            self.list_books()
+            book_index = get_int("Please enter the book number you would like to remove")
+            book_index -= 1
+            book: Book = self.get_book(book_index)
+            remove_from_bookshelf(book)
+            self._books.remove(book)
+            print("Book successfully removed from bookshelf!")
+            
+        else:
+            remove_from_bookshelf(target)
+            self._books.remove(target)
+            print("Book successfully removed from bookshelf!")        
+        #raise NotImplementedError("Bookshelf.remove function not implemented")
 
     def list_books(self):
         """Lists all the books currently stored in the bookshelf object
@@ -390,4 +400,4 @@ if __name__ == "__main__":
     # shelf.list_books()
 
     match = find_by_title()
-    
+    shelf.remove()

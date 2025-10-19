@@ -216,7 +216,7 @@ class Book():
             chapter_number += 1
             self._length += 1
 
-#new workflow -> bookshelf just finds in the sql database and pulls file data when you need!
+
 class Bookshelf():
     def __init__(self):
         self._books = []
@@ -239,7 +239,11 @@ class Bookshelf():
                             book[language_positional],book[length_positional])
             
             self._books.append(new_book)
+            self._length += 1
 
+    def books(self):
+        return self._books.copy()
+    
     def add_book(self, path):
         new_book = Book(file_path=path)
         
@@ -258,6 +262,7 @@ class Bookshelf():
                 raise shutil.Error("in Bookshelf.add_book: Something went wrong copying the ebook file to the local folder")
         else:
             print("File already exists in library folder.")
+        
         attributes = new_book.to_list()
         for book in self._books:
             if attributes[0] in book.id:
@@ -311,6 +316,18 @@ class Bookshelf():
             print(f"{i}: {book.title}")
             i+=1
         return self._books
+    
+    def __iter__(self):
+        self.itercounter = 0
+        return self
+    
+    def __next__(self):
+        if self.itercounter < self._length:
+            book = self._books[self.itercounter]
+            self.itercounter += 1
+            return book #Returns each Book instance stored in the shelf object
+        else:
+            raise StopIteration
 
 con = sqlite3.connect("bookshelf.db")
 cur = con.cursor()
@@ -388,8 +405,9 @@ if __name__ == "__main__":
     import tkinter, tkinter.filedialog
     
     shelf = Bookshelf()
-    shelf.list_books()
-    
+    #shelf.list_books()
+    for book in shelf:
+        print(book.title)
     # def get_file_path():
     #     book_path = ""
     #     while book_path.endswith('.epub') is not True:
@@ -399,5 +417,5 @@ if __name__ == "__main__":
     # shelf.add_book(path)
     # shelf.list_books()
 
-    match = find_by_title()
-    shelf.remove()
+    #match = find_by_title()
+    #shelf.remove()

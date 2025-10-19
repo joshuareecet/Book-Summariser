@@ -1,6 +1,6 @@
 #Imports required for gemini access
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 from time import sleep #to limit the no. of requests per minute on free api
 from llama_cpp import Llama
 
@@ -23,7 +23,7 @@ print(r"""
 """)
 
 #Setting constants
-gemini_token_limit = 250000 #for gemini 2.5 flash. maybe can add option to use pro?
+gemini_token_limit = 250000 #for gemini 2.5 flash its 250,000. maybe can add option to use pro?
 chars_per_token = 3
 summary_limit = gemini_token_limit - (len(part_summary)/chars_per_token)
 
@@ -72,11 +72,27 @@ def get_book_summary(book: Book, chunk_type: str, combiner_type: str):
     
     #Getting summaries for each individual chunk and joining them
     query_wait_time = 15     #we can do 5 queries per minute on free gemini api, so around once every 12 seconds should stop us being rate limited.
-
+    exception_count = 0
+    max_exceptions = 5 # user had to wait at least 5 mins for a query
     for query in joined_chapters:
-        appender = get_summary(query,chunk_type)
+        
+        try:
+            appender = get_summary(query,chunk_type)
+        except errors.ServerError:
+            
+            if exception_count == max_exceptions:
+                leave = input(f"{max_exceptions} Exceptions encountered: Would you like to continue? Y/N")
+                if leave.strip().lower() == "y":
+                    break
+
+            print("Encountered Server Error: waiting 60 seconds before sending next query")
+            sleep(60)
+            appender = get_summary(query,chunk_type)
+            exception_count += 1
+
         parts.append(appender)
         sleep(query_wait_time)
+    
     final_summary = "".join(parts)
     
     response = get_summary(final_summary, combiner_type)
@@ -154,6 +170,7 @@ def select_mode():
         #"3: Open Library\n"
             )
     mode = get_int(prompt,0,3)
+    print("")
     
     if mode == 1:
         file_path = get_file_path()
@@ -176,7 +193,7 @@ def browse_library():
 
 def select_book():
     shelf.list_books()
-    if shelf.list_books() == []:
+    if shelf.books() == []:
         print("\nBookshelf is empty, please add a book!\n")
         select_mode()
     print("")
@@ -238,6 +255,10 @@ def select_book_type(target_book: Book, book_or_chap: int):
     if book_or_chap == 1:
         response = get_book_summary(target_book, type, combiner_type)
         print(response)
+        summary_file_name = "Book Summary " + "".join(filter(lambda character: character.isalnum() or character.isspace(), target_book.title)) + ".txt"
+        with open(summary_file_name, "w") as file:
+            file.write(response)
+        print("You can also find the summary in ", summary_file_name)
     else:
         prompt = "Please enter the chapter number you would like to be summarised: "
         for chapter_title in target_book.chapter_titles():

@@ -1,5 +1,6 @@
 .env
 *.pyc
+*.txt
 bookshelf.db
 bookshelf.json
 ebooks

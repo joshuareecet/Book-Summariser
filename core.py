@@ -22,7 +22,8 @@ abs_root_path = Path.cwd()
 class Book():  
     def __init__(self, id: list = None, file_path: str = None,  title: str = None,
                   author: list = None, lang: str = None, length: int = None):
-        self._path: str = file_path if isinstance(file_path, Path) else Path(file_path)
+        
+        self._path: str = Path(file_path)
         self._file = None
         self._chapters_title = []
         self._chapters_text = []
@@ -225,9 +226,7 @@ class Bookshelf():
         
     def load_from_file(self):
         books = get_stored_books()
-        for book in books:
-            #There's probably a better way of writing this but i just need it to work for now
-            
+        for book in books:            
             id_positional = 0
             path_positional = 1
             title_positional = 2

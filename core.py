@@ -1,420 +1,234 @@
-#For fuzzy matching during search
-from rapidfuzz import fuzz
+from __future__ import annotations
 
-#For SQL database storage
-import sqlite3, shutil, os, ebooklib
+import shutil
 from pathlib import Path
-from user_interaction import get_int
+from typing import Optional
 
-#For parsing books
+import ebooklib
 from bs4 import BeautifulSoup
 from ebooklib import epub
+from rapidfuzz import fuzz
+
+from database import Database
+
+_EBOOKS_DIR = Path(__file__).parent / "ebooks"
+_MIN_CHAPTER_CHARS = 2000
 
 
 
-"""
-Currently non-functional.
-"""
-#Required for classes
-ebook_directory_str = 'ebooks'
-abs_root_path = Path.cwd()
+class Book:
+    """Represents an ebook. Content is loaded lazily on first access."""
 
-class Book():  
-    def __init__(self, id: list = None, file_path: str = None,  title: str = None,
-                  author: list = None, lang: str = None, length: int = None):
-        
-        self._path: str = Path(file_path)
-        self._file = None
-        self._chapters_title = []
-        self._chapters_text = []
-        
-        if id:
-            self._id = id
-            self._title: str = title if title else "Unknown title"
-            self._author: str = author if author else "Unknown Author"
-            self._language: str = lang if lang else "Unknown Language"
-            self._length = length if length else 0
+    def __init__(
+        self,
+        file_path: str | Path,
+        *,
+        book_id: Optional[str] = None,
+        title: Optional[str] = None,
+        author: Optional[str] = None,
+        lang: Optional[str] = None,
+        length: Optional[int] = None,
+    ) -> None:
+        self._path = Path(file_path)
+        self._epub: Optional[ebooklib.epub.EpubBook] = None
+        self._chapter_titles: list[str] = []
+        self._chapter_texts: list[str] = []
+        self._length: int = length or 0
+
+        if book_id is not None:
+            # Reconstructed from the database — trust the stored metadata
+            self._id: str = book_id
+            self._title: str = title or "Unknown Title"
+            self._author: str | list[str] = author or "Unknown Author"
+            self._language: str = lang or "Unknown Language"
         else:
-            self.read_book()
+            # New book — read metadata directly from the epub file
+            self._open_epub()
+            self._id = self._meta("identifier") or str(self._path.stem)
+            self._title = self._meta("title") or "Unknown Title"
+            self._author = self._all_meta("author") or "Unknown Author"
+            self._language = self._meta("language") or "Unknown Language"
 
-            author_metadata: str = self._file.get_metadata('DC','author')
-            title_metadata: str = self._file.get_metadata('DC','title')
-            language_metadata: str = self._file.get_metadata('DC','language') #this can return the format e.g. XML maybe we can use this
-            id_metadata = self._file.get_metadata('DC','identifier')
+    # ── Private helpers ───────────────────────────────────────────────────────
 
-            #Converting metadata into information for storage
-            self._title = title_metadata[0][0] if title_metadata else "Unknown title"
-            self._author: list = [str(a) for a in author_metadata] if author_metadata else "Unknown Author"
-            self._language = language_metadata[0][0] if language_metadata else "Unknown Language"
-            #ID comes as a list but we really just want uuid
-            self._id = str(id_metadata[0][0]) if id_metadata else "Unknown ID"
-            self._length = length if length else 0 # I'm not sure if we should even keep the length value
+    def _open_epub(self) -> None:
+        if self._epub is None:
+            if not self._path.exists():
+                raise FileNotFoundError(f"Ebook file not found: {self._path}")
+            self._epub = epub.read_epub(self._path)
 
+    def _meta(self, key: str) -> Optional[str]:
+        self._open_epub()
+        items = self._epub.get_metadata("DC", key)
+        return items[0][0] if items else None
 
-    def _set_path(self, path):
-        self._path = path
+    def _all_meta(self, key: str) -> list[str]:
+        self._open_epub()
+        return [str(item[0]) for item in self._epub.get_metadata("DC", key)]
 
-    @property
-    def id(self):
-        return (self._id.copy() if isinstance(id,list) else self._id)
-    
-    @id.setter
-    def id(self, value):
-        print("Are you sure you want to modify the id?")
-        self._id = value
-    
-    @property
-    def author(self):
-        return self._author.copy() if isinstance(self._author, list) else self._author
-    
-    @author.setter
-    def author(self, value):
-        if isinstance(value, str):
-            self._author = value
-        elif isinstance(value, list):
-            self._author = value
-        else:
-            raise ValueError("ValueError: author can only be str or list!")        
-    
-    @property
-    def title(self):
-        return self._title
-   
-    @title.setter
-    def title(self, value):
-        if isinstance(value, str):
-            self._title = value
-        else:
-            raise ValueError("Title can only be set as a string.")
-    
-    @property
-    def lang(self):
-        return self._language
-    @lang.setter
-    def lang(self, value):
-        if isinstance(value, str):
-            self._lang = value
-        else:
-            raise ValueError("Language can only be set as a string!")
-    
-    @property
-    def length(self):
-        if self._length == 0:
-            self.get_content()
-        return self._length
-    @length.setter
-    def length(self, value):
-        print("This should be internal logic only. Length is unchanged.")
+    def _ensure_content(self) -> None:
+        """Parses chapters from the epub. No-op if already done."""
+        if self._chapter_texts:
+            return
+        self._open_epub()
+        chapters_html: list[bytes] = []
+        backup_titles: list[str] = []
 
-    def chapter_titles(self):
-        """
-        Returns:
-            self._chapters_title (list): A list containing the chapter titles
-        """
-        if self._chapters_title == []:
-            self.get_content()
-        return list(self._chapters_title)
-
-    def chapter_text(self, chapter_number):
-        """
-        Arguments:
-            chapter_number (int): The number of the chapter to be accessed
-        Returns:
-            self._chapters_text[chapter_number] (str): The text in the accessed chapter
-        """
-        if self._chapters_text == []:
-            self.get_content()
-        return self._chapters_text[chapter_number]
-    
-    def read_book(self):
-        """
-        Please call self.read() whenever you are accessing book metadata
-        """
-        if self._file == None:
-            try:
-                self._file: ebooklib.epub.EpubBook = epub.read_epub(self._path)
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found, please remove {self._title} from bookshelf.")
-    
-    def to_dict(self):
-        """A (deprecated?) function to translate the core attributes of the class to a dictionary
-        """
-        attributes = {
-            "path" : str(self._path),
-            "length" : self._length,
-            "title" : self._title,
-            "author" : self._author,
-            "language": self._language,
-            "id" : self._id
-        }
-        return attributes
-    
-    def to_list(self): 
-        """A function to translate the core attributes of the class to a list for SQL storage
-        """        
-        
-        attributes = [
-            self._id,      
-            str(self._path),
-            self._title,          
-            self._author if isinstance(self._author, str) else self._author.copy(),
-            self._language,       
-            self._length
-        ]
-        return attributes
-    
-    def get_content(self):
-        """
-        Function converts an epub to string format for processing
-        
-        Side effects:
-            self._chapters_html (list) -> a list with the html version of each chapter at each index
-            self._chapters_text (list) -> The raw text version of self._chapters_html
-            self._chapters_title (list) -> A list containing the titles of each chapter
-            self._length (int) -> The total num. of chapters
-        """
-        self.read_book()
-
-        #First convert epub to html format
-        self._chapters_html = []
-        backup_titles = []
-
-        for item in self._file.get_items():
+        for item in self._epub.get_items():
             if item.get_type() == ebooklib.ITEM_DOCUMENT:
                 content = item.get_content()
-                
-                min_character_count = 2000
-                #We can ignore any chapters that have less than 2000 characters in them.
-                #I just made up 2000 maybe there is a proper number somewhere we can use. i doubt it though
-                
-                if len(content) > min_character_count:
-                    self._chapters_html.append(content)
+                if len(content) > _MIN_CHAPTER_CHARS:
+                    chapters_html.append(content)
                     backup_titles.append(item.file_name)
 
-        chapter_number = 0
-        for chapter, backup_title in zip(self._chapters_html, backup_titles):
-            soup = BeautifulSoup(chapter, 'lxml-xml')
-            
-            #Extracting the title tag 
-            title_tags = [soup.title, soup.head, soup.h1, soup.h2]
-            secondary_tags = ['title', 'head', 'h1', 'h2']
+        for index, (html, fallback) in enumerate(zip(chapters_html, backup_titles)):
+            soup = BeautifulSoup(html, "lxml-xml")
+            self._chapter_titles.append(self._parse_title(soup, index, fallback))
+            self._chapter_texts.append(soup.get_text())
 
-            for tag, tag2 in zip(title_tags, secondary_tags):
-                if tag and tag.attrs and "title" in tag.attrs:
-                    self._chapters_title.append(f"{str(chapter_number)}: {tag['title']}")
-                    break
-                elif soup.find(tag2) and soup.find(tag2).string:
-                    self._chapters_title.append(f"{str(chapter_number)}: {soup.find(tag2).string}")
-                    break
-            else:
-                self._chapters_title.append(f"{str(chapter_number)}: {backup_title}")
+        self._length = len(self._chapter_texts)
 
-            #Extracting each chapter's raw text
-            text = [soup.get_text()]
-            self._chapters_text.append(' '.join(text))
-            
-            #Updating chapter number and self._length each loop
-            chapter_number += 1
-            self._length += 1
+    @staticmethod
+    def _parse_title(soup: BeautifulSoup, index: int, fallback: str) -> str:
+        for tag_name in ("title", "head", "h1", "h2"):
+            tag = soup.find(tag_name)
+            if tag:
+                if tag.attrs and "title" in tag.attrs:
+                    return f"{index}: {tag['title']}"
+                if tag.string:
+                    return f"{index}: {tag.string}"
+        return f"{index}: {fallback}"
+
+    # ── Properties ────────────────────────────────────────────────────────────
+
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @title.setter
+    def title(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError("Title must be a string.")
+        self._title = value
+
+    @property
+    def author(self) -> str | list[str]:
+        return list(self._author) if isinstance(self._author, list) else self._author
+
+    @author.setter
+    def author(self, value: str | list[str]) -> None:
+        if not isinstance(value, (str, list)):
+            raise TypeError("Author must be str or list[str].")
+        self._author = value
+
+    @property
+    def language(self) -> str:
+        return self._language
+
+    @property
+    def length(self) -> int:
+        if self._length == 0:
+            self._ensure_content()
+        return self._length
+    
+    def __len__(self):
+        return self.length
+
+    # ── Content accessors ─────────────────────────────────────────────────────
+
+    def chapter_titles(self) -> list[str]:
+        self._ensure_content()
+        return list(self._chapter_titles)
+
+    def chapter_text(self, index: int) -> str:
+        self._ensure_content()
+        return self._chapter_texts[index]
+
+    # ── Persistence ───────────────────────────────────────────────────────────
+
+    def to_db_record(self) -> list:
+        author = (
+            self._author
+            if isinstance(self._author, str)
+            else ", ".join(self._author)
+        )
+        return [self._id, str(self._path), self._title, author, self._language, self._length]
+
+    def __repr__(self) -> str:
+        return f"Book(title={self._title!r}, author={self._author!r})"
 
 
-class Bookshelf():
-    def __init__(self):
+class Bookshelf:
+    """A collection of Books backed by a SQLite database."""
+
+    def __init__(self, db: Database) -> None:
+        self._db = db
+        self._books: list[Book] = []
+        self._reload()
+
+    def _reload(self) -> None:
         self._books = []
-        self._length = 0
-        self.load_from_file()
-        
-    def load_from_file(self):
-        books = get_stored_books()
-        for book in books:            
-            id_positional = 0
-            path_positional = 1
-            title_positional = 2
-            author_positional = 3
-            language_positional = 4
-            length_positional = 5
-            new_book = Book(book[id_positional],book[path_positional],
-                            book[title_positional],book[author_positional],
-                            book[language_positional],book[length_positional])
-            
-            self._books.append(new_book)
-            self._length += 1
+        for book_id, path, title, author, language, length in self._db.get_all_books():
+            self._books.append(
+                Book(
+                    path,
+                    book_id=book_id,
+                    title=title,
+                    author=author,
+                    lang=language,
+                    length=length,
+                )
+            )
 
-    def books(self):
-        return self._books.copy()
-    
-    def add_book(self, path):
-        new_book = Book(file_path=path)
-        
-        #Making a local copy of the ebook
-        if isinstance(path, Path) == False:
-            original_path = Path(path)
-        
-        file_name = original_path.parts[-1]
-        new_path = abs_root_path / ebook_directory_str / file_name
+    @property
+    def books(self) -> list[Book]:
+        return list(self._books)
 
-        if new_path.exists() == False:
-            try:
-                shutil.copy2(original_path, new_path)
-                new_book._set_path(new_path)
-            except shutil.Error:
-                raise shutil.Error("in Bookshelf.add_book: Something went wrong copying the ebook file to the local folder")
-        else:
-            print("File already exists in library folder.")
-        
-        attributes = new_book.to_list()
-        for book in self._books:
-            if attributes[0] in book.id:
-                print("Book already in library")
-                return
+    def add_book(self, path: str | Path) -> Book:
+        source = Path(path)
+        dest = _EBOOKS_DIR / source.name
+        if not dest.exists():
+            shutil.copy2(source, dest)
 
-        self._books.append(new_book)
-        add_to_bookshelf(new_book)
+        book = Book(dest)
+        if self._db.book_exists(book.id):
+            print(f'"{book.title}" is already in your library.')
+            return book
 
-    def find(self):
-        """
-        Arguments:
-            target (str): The book id
-        Returns:
-            index : The index of the item in self._books
-        """
-        return find_by_title() #Fix this implementation
-    
-    def get_book(self, target):
-        """Finds a book in self._books
-        Arguments:
-            target (int): the index of the target in self._books
-        Returns:
-            book (Book): The book object.
-        """
-        book = self._books[target]
+        self._db.add_book(book.to_db_record())
+        self._books.append(book)
+        print(f'Added "{book.title}" to library.')
         return book
 
-    def remove(self, target: Book = None):
-        if target == None:
-            self.list_books()
-            book_index = get_int("Please enter the book number you would like to remove")
-            book_index -= 1
-            book: Book = self.get_book(book_index)
-            remove_from_bookshelf(book)
-            self._books.remove(book)
-            print("Book successfully removed from bookshelf!")
-            
-        else:
-            remove_from_bookshelf(target)
-            self._books.remove(target)
-            print("Book successfully removed from bookshelf!")        
-        #raise NotImplementedError("Bookshelf.remove function not implemented")
+    def remove_book(self, book: Book) -> None:
+        self._db.remove_book(book.id)
+        self._books.remove(book)
 
-    def list_books(self):
-        """Lists all the books currently stored in the bookshelf object
-        """
-        print("Books currently in library: ")
-        i = 1
-        for book in self._books:
-            print(f"{i}: {book.title}")
-            i+=1
-        return self._books
-    
+    def get_book(self, index: int) -> Book:
+        return self._books[index]
+
+    def search_by_title(self, term: str, threshold: int = 80) -> list[tuple[int, Book]]:
+        """Returns (index, Book) pairs whose title fuzzy-matches *term*."""
+        return [
+            (i, b)
+            for i, b in enumerate(self._books)
+            if fuzz.partial_ratio(b.title.lower(), term.lower()) > threshold
+        ]
+
+    def list_books(self) -> None:
+        if not self._books:
+            print("Your library is empty.")
+            return
+        print("Library:")
+        for i, book in enumerate(self._books, start=1):
+            print(f"  {i}. {book.title}")
+
+    def __len__(self) -> int:
+        return len(self._books)
+
     def __iter__(self):
-        self.itercounter = 0
-        return self
-    
-    def __next__(self):
-        if self.itercounter < self._length:
-            book = self._books[self.itercounter]
-            self.itercounter += 1
-            return book #Returns each Book instance stored in the shelf object
-        else:
-            raise StopIteration
-
-con = sqlite3.connect("bookshelf.db")
-cur = con.cursor()
-cur.execute("CREATE TABLE IF NOT EXISTS bookshelf(id, path, title, author, language, length)")
-
-def get_stored_books():
-    all_books = cur.execute("SELECT * FROM bookshelf")
-    all_books = all_books.fetchall()
-    return all_books
-    
-
-def add_to_bookshelf(new_book: Book):
-    book_data = new_book.to_list()
-    matches = cur.execute("SELECT * FROM bookshelf WHERE id=?",(new_book.id,))
-    if matches.fetchall() == []:
-        cur.execute("INSERT INTO bookshelf VALUES(?, ?, ?, ?, ?, ?)", book_data)
-        con.commit()
-        print("book added to database")
-    else:
-        print("Book already stored in bookshelf")
-
-def find_by_title():
-    """
-    Returns:
-        match
-    """
-    
-    #target = input("Please enter the title of the book that you would like to find: \n")
-    print('')
-    titles = cur.execute("SELECT title, path, id FROM bookshelf")
-    title_items = titles.fetchall()
-    
-    search_term = input("Please enter the title of the book to search for: \n")
-    matches = []
-    for item in title_items:
-        if fuzz.partial_ratio(item[0].lower(), search_term) > 80:
-            matches.append(item)
-    
-    if matches == []:
-        print("No matches found!")
-    
-    elif len(matches) == 1:
-        print(f"Match found: {matches[0][0]}")
-        match = matches[0]
-        return match
-    
-    elif len(matches) > 1:
-        print("Found matches: ")
-
-        i = 0
-        for items in matches:
-            print(f"{i}: {items[0]}")
-            i += 1
-        print(f"{i}: Cancel / Match not in list")
-        
-        user_selection = int(input("Please enter your selection: "))
-        if user_selection == i:
-            return None
-        else:
-            try:
-                match = matches[user_selection]
-                return match
-            except ValueError:
-                raise ValueError("Something went wrong.")
-
-def remove_from_bookshelf(target_book: Book):
-    book_id = target_book.id
-    cur.execute("DELETE FROM bookshelf WHERE id=?",(book_id,))
-    con.commit()
-    shelf.load_from_file()
-
-
-#Test case
-if __name__ == "__main__":
-    import tkinter, tkinter.filedialog
-    
-    shelf = Bookshelf()
-    #shelf.list_books()
-    for book in shelf:
-        print(book.title)
-    # def get_file_path():
-    #     book_path = ""
-    #     while book_path.endswith('.epub') is not True:
-    #         book_path = tkinter.filedialog.askopenfilename(title = "Please select an ebook file.")
-    #     return book_path
-    # path = get_file_path()
-    # shelf.add_book(path)
-    # shelf.list_books()
-
-    #match = find_by_title()
-    #shelf.remove()
+        return iter(self._books)
